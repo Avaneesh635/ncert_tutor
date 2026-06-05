@@ -42,3 +42,7 @@ Reports are written to `evals/reports/`.
 ## Frontend
 
 Optional. See `frontend/README.md`.
+## Submission
+
+Do not push your solution to this starter repo. Create a new private GitHub repo, push your completed solution there, invite `abhishektayal2802` as a collaborator, and send us the repo URL.
+

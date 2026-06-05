@@ -57,7 +57,9 @@ We will also run private prompts and discuss your design in a walkthrough.
 
 ## Submission
 
-Submit a GitHub repo or zip with:
+Do not push your solution to this starter repo.
+
+Create a new private GitHub repo for your completed solution, invite `abhishektayal2802` as a collaborator, and send us the repo URL. Include:
 
 - Final code.
 - README.
