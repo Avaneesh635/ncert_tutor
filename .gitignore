@@ -1,4 +1,5 @@
 .env
+.ruff_cache/
 .venv/
 __pycache__/
 *.pyc
@@ -7,3 +8,23 @@ dist/
 data/raw/
 data/generated/
 evals/reports/
+
+# secrets
+.env
+backend/.env
+
+# python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# vector index (rebuilt on setup)
+chroma_db/
+
+# large source PDFs (download per data/manifest.json)
+data/raw/*.pdf
+
+# OS / editor
+.DS_Store

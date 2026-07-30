@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NCERT Tutor — ask the books</title>
+<meta name="description" content="A grounded RAG tutor for CBSE Class 12 Physics, Chemistry and Mathematics." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,500&family=Spline+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+
+<style>
+  :root{
+    --ink:#0a1714; --ink-2:#0d1f1a; --panel:#102720; --panel-2:#13302799;
+    --paper:#eef4ee; --muted:#9bb3a9; --faint:#6f8a80;
+    --line:rgba(238,244,238,.10); --line-soft:rgba(238,244,238,.06);
+    --brass:#e6b65c; --brass-soft:#e6b65c22; --mint:#62d6c2; --mint-soft:#62d6c21f;
+    --user:#1c3a31; --shadow:0 18px 50px -22px rgba(0,0,0,.8);
+    --r:16px;
+    --disp:"Fraunces",Georgia,serif; --body:"Spline Sans",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--paper); font-family:var(--body); font-size:16px; line-height:1.6;
+    background:var(--ink);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    overflow:hidden;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(1100px 700px at 12% -8%, rgba(98,214,194,.16), transparent 60%),
+      radial-gradient(900px 600px at 92% 8%, rgba(230,182,92,.13), transparent 60%),
+      radial-gradient(1200px 900px at 50% 120%, rgba(98,214,194,.08), transparent 60%),
+      linear-gradient(180deg, var(--ink-2), var(--ink) 60%);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size:46px 46px;
+    mask-image:radial-gradient(120% 90% at 50% 30%, #000 35%, transparent 92%);
+  }
+  #ambient{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden}
+  #ambient span{
+    position:absolute; font-family:var(--disp); color:var(--mint);
+    opacity:.05; user-select:none; will-change:transform;
+    animation:floaty linear infinite;
+  }
+  @keyframes floaty{
+    0%{transform:translateY(14px) rotate(-4deg)}
+    50%{transform:translateY(-18px) rotate(5deg)}
+    100%{transform:translateY(14px) rotate(-4deg)}
+  }
+
+  .app{position:relative; z-index:1; height:100%; display:flex; flex-direction:column}
+
+  header{
+    display:flex; align-items:center; gap:16px; padding:14px clamp(16px,4vw,40px);
+    border-bottom:1px solid var(--line); backdrop-filter:blur(6px);
+    background:linear-gradient(180deg, rgba(10,23,20,.72), rgba(10,23,20,.32));
+  }
+  .brand{display:flex; align-items:center; gap:12px; min-width:0}
+  .monogram{
+    width:40px; height:40px; flex:0 0 auto; display:grid; place-items:center;
+    border-radius:11px; font-family:var(--disp); font-weight:900; font-size:24px; color:var(--ink);
+    background:linear-gradient(150deg, var(--brass), #f3d79a);
+    box-shadow:0 0 0 1px rgba(255,255,255,.12), 0 8px 22px -10px var(--brass);
+    animation:glow 4.5s ease-in-out infinite;
+  }
+  @keyframes glow{0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.12),0 8px 22px -12px var(--brass)}50%{box-shadow:0 0 0 1px rgba(255,255,255,.18),0 10px 30px -8px var(--brass)}}
+  .wordmark{font-family:var(--disp); font-weight:600; font-size:20px; letter-spacing:.2px; line-height:1}
+  .wordmark small{display:block; font-family:var(--body); font-weight:500; font-size:10.5px; letter-spacing:.22em; text-transform:uppercase; color:var(--faint); margin-top:4px}
+
+  .status{margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+  .pill{
+    display:inline-flex; align-items:center; gap:7px; padding:6px 11px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel-2); color:var(--muted);
+    font-size:12px; font-weight:500; white-space:nowrap;
+  }
+  .pill .dot{width:7px; height:7px; border-radius:50%; background:var(--mint); box-shadow:0 0 0 0 var(--mint); animation:ping 2.4s ease-out infinite}
+  @keyframes ping{0%{box-shadow:0 0 0 0 rgba(98,214,194,.5)}70%{box-shadow:0 0 0 7px rgba(98,214,194,0)}100%{box-shadow:0 0 0 0 rgba(98,214,194,0)}}
+  #modelPill{color:var(--brass); border-color:var(--brass-soft); display:none}
+  #modelPill.on{display:inline-flex}
+  .ghost-btn{
+    cursor:pointer; font-family:var(--body); font-size:12.5px; font-weight:600; color:var(--paper);
+    padding:7px 13px; border-radius:999px; border:1px solid var(--line); background:transparent;
+    transition:transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .ghost-btn:hover{border-color:var(--mint); background:var(--mint-soft); transform:translateY(-1px)}
+
+  main{flex:1; overflow-y:auto; scroll-behavior:smooth}
+  main::-webkit-scrollbar{width:10px}
+  main::-webkit-scrollbar-thumb{background:#ffffff14; border-radius:99px; border:3px solid transparent; background-clip:padding-box}
+  .stream{max-width:840px; margin:0 auto; padding:clamp(20px,4vw,40px) clamp(16px,4vw,28px) 8px}
+
+  .empty{min-height:62vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:6px; animation:rise .6s ease both}
+  .empty .kicker{font-family:var(--body); font-weight:600; font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:var(--mint)}
+  .empty h1{font-family:var(--disp); font-weight:900; font-size:clamp(40px,8vw,76px); line-height:.96; margin:10px 0 0; letter-spacing:-.02em}
+  .empty h1 em{font-style:italic; font-weight:500; color:var(--brass)}
+  .empty p{max-width:46ch; color:var(--muted); margin:14px 0 0; font-size:15.5px}
+  .suggest{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:26px; max-width:680px}
+  .chip{
+    cursor:pointer; text-align:left; font-family:var(--body); font-size:13.5px; color:var(--paper);
+    padding:11px 15px; border-radius:13px; border:1px solid var(--line); background:var(--panel-2);
+    transition:transform .15s ease, border-color .15s ease, background .15s ease; max-width:300px;
+  }
+  .chip:hover{transform:translateY(-2px); border-color:var(--brass); background:var(--brass-soft)}
+  .chip b{display:block; font-family:var(--disp); font-weight:600; font-size:12px; letter-spacing:.04em; color:var(--mint); margin-bottom:3px}
+
+  .msg{display:flex; gap:13px; margin:22px 0; animation:rise .42s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+  .msg.user{flex-direction:row-reverse}
+  .avatar{
+    flex:0 0 auto; width:34px; height:34px; border-radius:10px; display:grid; place-items:center;
+    font-size:13px; font-weight:700; margin-top:2px;
+  }
+  .msg.assistant .avatar{font-family:var(--disp); font-size:19px; color:var(--ink); background:linear-gradient(150deg,var(--mint),#bff3e9)}
+  .msg.user .avatar{font-family:var(--body); color:var(--paper); background:#234a3d; border:1px solid var(--line)}
+  .bubble{
+    max-width:min(72ch,100%); padding:15px 18px; border-radius:var(--r); border:1px solid var(--line);
+    box-shadow:var(--shadow); word-wrap:break-word;
+  }
+  .msg.user .bubble{background:var(--user); border-color:#2c564799; border-top-right-radius:5px; white-space:pre-wrap}
+  .msg.assistant .bubble{background:linear-gradient(180deg,#122a23,#0f241d); border-left:3px solid var(--mint); border-top-left-radius:5px}
+
+  .meta{display:flex; align-items:center; gap:8px; margin-bottom:9px; flex-wrap:wrap}
+  .tag{font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:999px}
+  .tag.model{color:var(--brass); background:var(--brass-soft)}
+  .tag.grounded{color:var(--mint); background:var(--mint-soft); display:inline-flex; align-items:center; gap:6px}
+  .tag.grounded i{width:6px; height:6px; border-radius:50%; background:var(--mint); animation:ping 2.4s ease-out infinite}
+
+  .bubble h1,.bubble h2,.bubble h3{font-family:var(--disp); line-height:1.2; margin:18px 0 8px; letter-spacing:-.01em}
+  .bubble h1{font-size:1.5em} .bubble h2{font-size:1.28em} .bubble h3{font-size:1.1em; color:var(--brass)}
+  .bubble p{margin:9px 0}
+  .bubble ul,.bubble ol{margin:9px 0; padding-left:1.3em}
+  .bubble li{margin:5px 0}
+  .bubble a{color:var(--mint)}
+  .bubble strong{color:#fff; font-weight:700}
+  .bubble hr{border:0; border-top:1px solid var(--line); margin:16px 0}
+  .bubble blockquote{margin:10px 0; padding:4px 14px; border-left:3px solid var(--brass); color:var(--muted)}
+  .bubble code{font-family:var(--mono); font-size:.88em; background:#00000040; padding:.12em .4em; border-radius:6px}
+  .bubble pre{background:#06120e; border:1px solid var(--line); border-radius:12px; padding:14px 16px; overflow-x:auto; margin:12px 0}
+  .bubble pre code{background:none; padding:0; font-size:.85em; line-height:1.55}
+  .bubble table{border-collapse:collapse; margin:14px 0; width:100%; font-size:.92em; display:block; overflow-x:auto}
+  .bubble th,.bubble td{border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top}
+  .bubble th{background:#ffffff0a; font-family:var(--disp); font-weight:600}
+  .bubble tr:nth-child(even) td{background:#ffffff05}
+  .math-block{margin:14px 0; overflow-x:auto; text-align:center}
+
+  .cite{
+    cursor:help; font-family:var(--body); font-size:10.5px; font-weight:600; letter-spacing:.03em;
+    color:var(--mint); background:var(--mint-soft); border:1px solid #62d6c240; border-radius:7px;
+    padding:2px 7px 2px 6px; margin:0 2px; display:inline-flex; align-items:center; gap:5px;
+    vertical-align:baseline; transition:transform .14s ease, background .14s ease, border-color .14s ease;
+  }
+  .cite:hover{transform:translateY(-1px); background:#62d6c233; border-color:var(--mint)}
+  .cite .cite-dot{width:5px; height:5px; border-radius:50%; background:var(--mint)}
+
+  .typing{display:inline-flex; gap:5px; padding:4px 2px}
+  .typing i{width:7px; height:7px; border-radius:50%; background:var(--muted); animation:bounce 1.2s infinite ease-in-out}
+  .typing i:nth-child(2){animation-delay:.18s} .typing i:nth-child(3){animation-delay:.36s}
+  @keyframes bounce{0%,80%,100%{transform:translateY(0); opacity:.4}40%{transform:translateY(-5px); opacity:1}}
+
+  footer{padding:12px clamp(16px,4vw,28px) 18px; border-top:1px solid var(--line); background:linear-gradient(0deg, rgba(10,23,20,.85), rgba(10,23,20,.2))}
+  .composer{max-width:840px; margin:0 auto}
+  .field{
+    display:flex; align-items:flex-end; gap:10px; padding:10px 10px 10px 16px;
+    border:1px solid var(--line); border-radius:18px; background:var(--panel);
+    box-shadow:var(--shadow); transition:border-color .18s ease, box-shadow .18s ease;
+  }
+  .field:focus-within{border-color:var(--brass); box-shadow:0 0 0 4px var(--brass-soft), var(--shadow)}
+  textarea{
+    flex:1; resize:none; border:0; outline:0; background:transparent; color:var(--paper);
+    font-family:var(--body); font-size:15.5px; line-height:1.5; max-height:200px; padding:8px 0;
+  }
+  textarea::placeholder{color:var(--faint)}
+  .send{
+    flex:0 0 auto; width:42px; height:42px; border-radius:13px; border:0; cursor:pointer;
+    display:grid; place-items:center; color:var(--ink);
+    background:linear-gradient(150deg, var(--brass), #f3d79a);
+    transition:transform .15s ease, filter .15s ease, opacity .15s ease;
+  }
+  .send:hover:not(:disabled){transform:translateY(-1px) scale(1.04); filter:brightness(1.05)}
+  .send:active:not(:disabled){transform:scale(.96)}
+  .send:disabled{opacity:.45; cursor:default}
+  .send svg{width:19px; height:19px}
+  .send .spin{width:18px; height:18px; border:2px solid #0a171455; border-top-color:var(--ink); border-radius:50%; animation:spin .7s linear infinite; display:none}
+  .send.loading svg{display:none} .send.loading .spin{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hint{max-width:840px; margin:8px auto 0; text-align:center; color:var(--faint); font-size:11.5px; letter-spacing:.02em}
+  .hint kbd{font-family:var(--mono); font-size:10.5px; background:#ffffff0d; border:1px solid var(--line); border-radius:5px; padding:1px 5px}
+
+  @media (max-width:560px){
+    .wordmark small{display:none}
+    .bubble{max-width:100%}
+    .msg{gap:9px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important; scroll-behavior:auto !important}
+  }
+</style>
+</head>
+<body>
+<div id="ambient" aria-hidden="true"></div>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="monogram">∫</div>
+      <div class="wordmark">NCERT&nbsp;Tutor<small>Class 12 · Physics · Chemistry · Maths</small></div>
+    </div>
+    <div class="status">
+      <span class="pill"><span class="dot"></span>grounded in 6 NCERT books</span>
+      <span class="pill" id="modelPill"></span>
+      <button class="ghost-btn" id="newChat" type="button">New chat</button>
+    </div>
+  </header>
+
+  <main id="scroll">
+    <div class="stream" id="stream">
+      <section class="empty" id="empty">
+        <span class="kicker">Retrieval-augmented · cites every page</span>
+        <h1>Ask the <em>books.</em></h1>
+        <p>A patient tutor for CBSE Class 12 PCM. Answers are grounded in the official NCERT textbooks and tagged with the page they came from. Off-syllabus questions get a polite redirect.</p>
+        <div class="suggest" id="suggest">
+          <button class="chip" data-q="State and explain Lenz's Law, with its formula."><b>Physics</b>State &amp; explain Lenz's Law</button>
+          <button class="chip" data-q="Integrate (2x+3)/((x+1)(x+2)) using partial fractions."><b>Maths</b>Partial-fraction integral</button>
+          <button class="chip" data-q="Which chapter covers the inverse of a matrix?"><b>Syllabus</b>Where is matrix inverse?</button>
+          <button class="chip" data-q="Is the anode always the negative electrode?"><b>Trap</b>Is the anode always negative?</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="composer">
+      <div class="field">
+        <textarea id="input" rows="1" placeholder="Ask a Class 12 Physics, Chemistry or Maths question…" aria-label="Your question"></textarea>
+        <button class="send" id="send" type="button" aria-label="Send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <span class="spin"></span>
+        </button>
+      </div>
+      <div class="hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line · answers cite NCERT pages</div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  (function(){
+    const glyphs = ["∫","∑","","λ","π","","θ","∞","Δ","φ","√","≈","Ω","μ"];
+    const box = document.getElementById("ambient");
+    glyphs.forEach((g,i)=>{
+      const s = document.createElement("span");
+      s.textContent = g;
+      const size = 30 + (i*37 % 90);
+      s.style.left = (i*71 % 96) + "vw";
+      s.style.top  = (i*53 % 88) + "vh";
+      s.style.fontSize = size + "px";
+      s.style.animationDuration = (16 + (i*5 % 14)) + "s";
+      s.style.animationDelay = (-(i*3 % 12)) + "s";
+      s.style.color = (i % 3 === 0) ? "var(--brass)" : "var(--mint)";
+      box.appendChild(s);
+    });
+  })();
+
+  marked.setOptions({ gfm:true, breaks:false });
+  const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+  function render(raw){
+    const code=[], dm=[], im=[], cite=[];
+    raw = raw.replace(/```([\s\S]*?)```/g, (_,c)=>{ code.push(c); return "C"+(code.length-1)+""; });
+    raw = raw.replace(/\$\$([\s\S]+?)\$\$/g, (_,m)=>{ dm.push(m.trim()); return "\n\nD"+(dm.length-1)+"\n\n"; });
+    raw = raw.replace(/\$([^$\n]+?)\$/g, (_,m)=>{ im.push(m.trim()); return "I"+(im.length-1)+""; });
+    raw = raw.replace(/\[([A-Za-z0-9_]+)\s*:?\s*(?=[^\]]*p\.)([^\]]*)\]/g,
+            (_,b,p)=>{ cite.push({b, p:p.trim()}); return "R"+(cite.length-1)+""; });
+
+    let html = marked.parse(raw);
+
+    html = html.replace(/<p>\s*C(\d+)\s*<\/p>/g, (_,i)=>`<pre><code>${esc(code[+i])}</code></pre>`)
+               .replace(/C(\d+)/g, (_,i)=>`<pre><code>${esc(code[+i])}</code></pre>`);
+    html = html.replace(/<p>\s*D(\d+)\s*<\/p>/g, (_,i)=>block(dm[+i]))
+               .replace(/D(\d+)/g, (_,i)=>block(dm[+i]));
+    html = html.replace(/I(\d+)/g, (_,i)=>inline(im[+i]));
+    html = html.replace(/R(\d+)/g, (_,i)=>{
+      const c = cite[+i];
+      const label = c.b.replace(/_/g," ") + (c.p ? " · "+c.p : "");
+      return `<button class="cite" type="button" title="Cited from ${esc(c.b)}, ${esc(c.p)}" aria-label="Citation ${esc(c.b)} ${esc(c.p)}"><span class="cite-dot"></span>${esc(label)}</button>`;
+    });
+    return html;
+
+    function block(m){ try{ return `<div class="math-block">${katex.renderToString(m,{displayMode:true,throwOnError:false})}</div>`; }catch(e){ return `<div class="math-block">${esc(m)}</div>`; } }
+    function inline(m){ try{ return katex.renderToString(m,{displayMode:false,throwOnError:false}); }catch(e){ return `<code>${esc(m)}</code>`; } }
+  }
+
+  const stream = document.getElementById("stream");
+  const scroll = document.getElementById("scroll");
+  const input  = document.getElementById("input");
+  const sendBtn= document.getElementById("send");
+  const modelPill = document.getElementById("modelPill");
+  let history = [], busy = false;
+
+  const atBottom = () => scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 80;
+  function stick(){ if(atBottom()) requestAnimationFrame(()=> scroll.scrollTo({top:scroll.scrollHeight, behavior:"smooth"})); }
+
+  function clearEmpty(){ const e=document.getElementById("empty"); if(e) e.remove(); }
+
+  function addMsg(role, content, model){
+    clearEmpty();
+    const wrap = document.createElement("div"); wrap.className = "msg "+role;
+    const av = document.createElement("div"); av.className = "avatar";
+    av.textContent = role === "user" ? "You" : "∫";
+    const bubble = document.createElement("div"); bubble.className = "bubble";
+
+    if(role === "user"){
+      bubble.textContent = content;
+    } else {
+      if(model){
+        const meta = document.createElement("div"); meta.className = "meta";
+        const t = document.createElement("span"); t.className = "tag model"; t.textContent = model;
+        meta.appendChild(t); bubble.appendChild(meta);
+      }
+      const body = document.createElement("div"); body.innerHTML = render(content || "");
+      bubble.appendChild(body);
+      if(body.querySelector(".cite")){
+        const meta = bubble.querySelector(".meta") || (()=>{ const m=document.createElement("div"); m.className="meta"; bubble.prepend(m); return m; })();
+        const g = document.createElement("span"); g.className = "tag grounded";
+        g.innerHTML = '<i></i>grounded in NCERT'; meta.appendChild(g);
+      }
+    }
+    wrap.append(av, bubble); stream.appendChild(wrap); stick();
+    return wrap;
+  }
+
+  function addTyping(){
+    clearEmpty();
+    const wrap = document.createElement("div"); wrap.className = "msg assistant";
+    wrap.innerHTML = '<div class="avatar">∫</div><div class="bubble"><div class="typing"><i></i><i></i><i></i></div></div>';
+    stream.appendChild(wrap); stick(); return wrap;
+  }
+
+  function setBusy(on){ busy = on; sendBtn.classList.toggle("loading", on); sendBtn.disabled = on; }
+
+  async function send(text){
+    text = (text ?? input.value).trim();
+    if(!text || busy) return;
+    input.value = ""; grow();
+    setBusy(true);
+    addMsg("user", text); history.push({role:"user", content:text});
+    const typing = addTyping();
+    try{
+      const r = await fetch("/chat", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({messages: history})
+      });
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const data = await r.json();
+      typing.remove();
+      const ans = (data.answer || "").trim() || "(the model returned an empty answer)";
+      addMsg("assistant", ans, data.model);
+      history.push({role:"assistant", content:ans});
+      if(data.model){ modelPill.textContent = data.model; modelPill.classList.add("on"); }
+    }catch(e){
+      typing.remove();
+      addMsg("assistant", "⚠️ Couldn't reach the tutor — "+e.message+". Is `uvicorn` running on port 8000?");
+    }finally{
+      setBusy(false); input.focus(); stick();
+    }
+  }
+
+  function newChat(){
+    history = [];
+    stream.innerHTML = "";
+    modelPill.classList.remove("on"); modelPill.textContent = "";
+    stream.insertAdjacentHTML("beforeend",
+      `<section class="empty" id="empty">
+        <span class="kicker">Retrieval-augmented · cites every page</span>
+        <h1>Ask the <em>books.</em></h1>
+        <p>A patient tutor for CBSE Class 12 PCM. Answers are grounded in the official NCERT textbooks and tagged with the page they came from. Off-syllabus questions get a polite redirect.</p>
+        <div class="suggest" id="suggest">
+          <button class="chip" data-q="State and explain Lenz's Law, with its formula."><b>Physics</b>State &amp; explain Lenz's Law</button>
+          <button class="chip" data-q="Integrate (2x+3)/((x+1)(x+2)) using partial fractions."><b>Maths</b>Partial-fraction integral</button>
+          <button class="chip" data-q="Which chapter covers the inverse of a matrix?"><b>Syllabus</b>Where is matrix inverse?</button>
+          <button class="chip" data-q="Is the anode always the negative electrode?"><b>Trap</b>Is the anode always negative?</button>
+        </div>
+      </section>`);
+    input.focus();
+  }
+
+  function grow(){ input.style.height="auto"; input.style.height=Math.min(input.scrollHeight,200)+"px"; }
+  input.addEventListener("input", grow);
+  input.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); send(); } });
+  sendBtn.addEventListener("click", ()=> send());
+  document.getElementById("newChat").addEventListener("click", newChat);
+  stream.addEventListener("click", e=>{ const c=e.target.closest(".chip"); if(c) send(c.dataset.q); });
+  input.focus();
+</script>
+</body>
+</html>

@@ -1,6 +1,9 @@
 fastapi
-httpx
+uvicorn[standard]
 openai
 pydantic
 python-dotenv
-uvicorn
+pypdf
+sentence-transformers
+chromadb
+httpx
