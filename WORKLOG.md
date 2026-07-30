@@ -1,7 +1,7 @@
 # Worklog
 
 ## AI tools used
-- **Qwen** — pair‑programming partner for debugging, and the retrieval
+- **Qwen** — pair‑programming partner for architecture, debugging, and the retrieval
   diagnostics (`diag*.py`, `check.py`).
 - **Google Gemini** (`gemini-3.6-flash`) — the tutor LLM, via the OpenAI‑compatible endpoint.
 
